@@ -7,8 +7,8 @@ const handleNext = jest.fn();
 const handleInput = jest.fn();
 
 const dummyProps: PaginationProps = {
-  currentPage: "1",
-  totalPages: "5",
+  currentPage: 1,
+  totalPages: 5,
   handlePrevClick: handlePrev,
   handleNextClick: handleNext,
   handlePageInputChange: handleInput,
@@ -60,7 +60,7 @@ describe("<Pagination />", () => {
   });
 
   test("should disable prev button if page is last page", () => {
-    const props = { ...dummyProps, currentPage: "5" };
+    const props = { ...dummyProps, currentPage: 5 };
     const { getByTestId } = render(<Pagination {...props} />);
 
     userEvent.click(getByTestId("pagination-next-button"));
@@ -89,7 +89,7 @@ describe("<Pagination />", () => {
   });
 
   test("should disable all inputs if total pages is 0", () => {
-    const props = { ...dummyProps, totalPages: "0" };
+    const props = { ...dummyProps, totalPages: 0 };
     const { getByTestId } = render(<Pagination {...props} />);
 
     expect(getByTestId("pagination-prev-button")).toHaveProperty(

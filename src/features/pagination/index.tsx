@@ -5,10 +5,12 @@ import {
   selectMaxMagnitudeFilter,
   selectOffsetFilter,
   selectLimitFilter,
+  offsetIncremented,
+  offsetDecremented,
   offsetUpdatedByAmount,
 } from "@features/filter-bar/filterSlice";
 import { useHttpRequest } from "@hooks/useHttpRequest";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { CountResponse } from "./types";
 
@@ -19,7 +21,6 @@ const PaginationContainer: React.FC = () => {
   const maxMagnitudeFilter = useAppSelector(selectMaxMagnitudeFilter);
   const offsetFilter = useAppSelector(selectOffsetFilter);
   const limitFilter = useAppSelector(selectLimitFilter);
-  const [current, setCurrent] = useState<string>("1");
   const { data, loading } = useHttpRequest<CountResponse>(
     {
       url: "https://earthquake.usgs.gov/fdsnws/event/1/count",
@@ -33,37 +34,37 @@ const PaginationContainer: React.FC = () => {
     },
     [magTypeFilter, minMagnitudeFilter, maxMagnitudeFilter]
   );
-
+  const currentPage = useMemo(
+    () =>
+      data && offsetFilter > data!.count
+        ? 0
+        : Math.floor(offsetFilter / limitFilter + 1) || 0,
+    [data, offsetFilter, limitFilter]
+  );
   const totalPages = useMemo(
     () => (data && Math.ceil(data!.count / limitFilter)) || 0,
     [data, limitFilter]
   );
 
-  useEffect(() => {
-    const parseNum = parseInt(current);
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!data) return;
 
-    if (isNaN(parseNum)) return;
+    const page = parseInt(e.target.value);
 
-    if (data && parseNum > 0 && parseNum < totalPages) {
-      const offset = parseNum * limitFilter - limitFilter + 1;
+    if (page > 0 && page <= totalPages!) {
+      const offset = page * limitFilter - limitFilter + 1;
+
       dispatch(offsetUpdatedByAmount(offset));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
-
-  const handlePageClick = (type: "NEXT" | "PREV") => {
-    let c = parseInt(current);
-    c = type === "NEXT" ? c + 1 : c - 1;
-    setCurrent(c.toString());
   };
 
   return (
     <Pagination
-      currentPage={current}
-      totalPages={totalPages.toString()}
-      handlePrevClick={() => handlePageClick("PREV")}
-      handleNextClick={() => handlePageClick("NEXT")}
-      handlePageInputChange={(e) => setCurrent(e.target.value)}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      handlePrevClick={() => dispatch(offsetDecremented())}
+      handleNextClick={() => dispatch(offsetIncremented())}
+      handlePageInputChange={(e) => handlePageInputChange(e)}
       isDisabled={loading}
     />
   );
